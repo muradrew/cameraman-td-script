@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cameraman Tower Defense Script — Auto-Place Cameras, Infinite Money & ESP</title>
+<meta name="description" content="Cameraman Tower Defense script with auto-place cameras, instant wave clear, infinite money, ESP on hidden enemies and a one-click injector. Free, open source, Windows 10/11.">
+<style>
+  :root{
+    --bg-0:#070a18;
+    --bg-1:#0d1230;
+    --bg-2:#141a3d;
+    --ink:#e9ecff;
+    --muted:#9aa3c7;
+    --line:rgba(255,255,255,.09);
+    --glass:rgba(18,24,54,.55);
+    --brand-1:#6c8bff;
+    --brand-2:#a56bff;
+    --brand-3:#38e8c8;
+    --accent:#7c9bff;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 700px at 12% -10%, rgba(108,139,255,.22), transparent 60%),
+      radial-gradient(900px 650px at 92% 0%, rgba(165,107,255,.18), transparent 62%),
+      radial-gradient(1000px 800px at 50% 110%, rgba(56,232,200,.10), transparent 60%),
+      linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 45%, var(--bg-2) 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{width:min(1160px,92vw);margin-inline:auto}
+
+  /* ---------- NAV ---------- */
+  .nav{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(16px) saturate(140%);
+    -webkit-backdrop-filter:blur(16px) saturate(140%);
+    background:linear-gradient(180deg, rgba(12,17,40,.78), rgba(12,17,40,.5));
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{display:flex;align-items:center;gap:22px;height:72px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.2px;font-size:1.06rem;white-space:nowrap}
+  .brand-mark{
+    width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:1rem;
+    background:linear-gradient(135deg,var(--brand-1),var(--brand-2));
+    box-shadow:0 6px 22px rgba(124,155,255,.42);
+  }
+  .brand span{background:linear-gradient(90deg,#dfe6ff,#9fb2ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .nav-links{display:flex;gap:26px;margin-inline:auto;font-size:.93rem;color:var(--muted);font-weight:600}
+  .nav-links a{transition:color .2s}
+  .nav-links a:hover{color:#fff}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    font-weight:700;font-size:.95rem;border-radius:12px;
+    padding:12px 22px;border:1px solid transparent;cursor:pointer;
+    transition:transform .18s ease, box-shadow .25s ease, background .25s ease, border-color .2s;
+    white-space:nowrap;
+  }
+  .btn-primary{
+    color:#08102b;
+    background:linear-gradient(135deg,#8ea6ff,#b98cff 55%,#5ef0d8);
+    box-shadow:0 10px 30px rgba(124,155,255,.36);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(124,155,255,.5)}
+  .btn-ghost{
+    color:var(--ink);background:rgba(255,255,255,.045);
+    border-color:rgba(255,255,255,.16);backdrop-filter:blur(6px);
+  }
+  .btn-ghost:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
+  .nav .btn{padding:10px 18px;font-size:.88rem}
+
+  /* ---------- HERO ---------- */
+  .hero{padding:86px 0 64px;text-align:center;position:relative}
+  .pill{
+    display:inline-flex;align-items:center;gap:9px;
+    padding:7px 16px;border-radius:999px;font-size:.8rem;font-weight:700;letter-spacing:.4px;
+    color:#cfd8ff;background:rgba(124,155,255,.1);
+    border:1px solid rgba(124,155,255,.34);
+    text-transform:uppercase;
+  }
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--brand-3);box-shadow:0 0 10px var(--brand-3)}
+  h1{
+    font-size:clamp(2.15rem,6vw,4.15rem);
+    line-height:1.06;letter-spacing:-1.6px;font-weight:900;
+    margin:24px auto 20px;max-width:16ch;
+  }
+  .grad-text{
+    background:linear-gradient(100deg,#9fb4ff 0%,#c79cff 40%,#5ef0d8 88%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero p.lede{
+    max-width:62ch;margin:0 auto 34px;color:var(--muted);font-size:clamp(1rem,2.1vw,1.13rem);
+  }
+  .hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:44px}
+  .hero-cta .btn{padding:15px 30px;font-size:1rem}
+
+  .stats{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .chip{
+    display:flex;flex-direction:column;gap:2px;min-width:132px;
+    padding:14px 20px;border-radius:14px;
+    background:var(--glass);border:1px solid var(--line);
+    backdrop-filter:blur(10px);
+  }
+  .chip b{font-size:1.02rem;letter-spacing:-.2px}
+  .chip small{color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.7px;font-weight:700}
+
+  /* ---------- SECTION HEADERS ---------- */
+  section{padding:78px 0}
+  .sec-head{text-align:center;max-width:62ch;margin:0 auto 50px}
+  .sec-head h2{
+    font-size:clamp(1.65rem,4vw,2.5rem);letter-spacing:-.9px;font-weight:900;line-height:1.15;
+  }
+  .sec-head p{color:var(--muted);margin-top:14px;font-size:1rem}
+  .eyebrow{
+    display:block;font-size:.76rem;font-weight:800;letter-spacing:2px;
+    text-transform:uppercase;color:#8ea6ff;margin-bottom:12px;
+  }
+
+  /* ---------- FEATURES ---------- */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .card{
+    position:relative;overflow:hidden;
+    padding:30px 26px 28px;border-radius:var(--radius);
+    background:linear-gradient(180deg, rgba(24,31,66,.72), rgba(14,19,44,.72));
+    border:1px solid var(--line);
+    transition:transform .26s ease, border-color .26s ease, box-shadow .26s ease;
+  }
+  .card::before{
+    content:"";position:absolute;inset:0 0 auto;height:3px;
+    background:linear-gradient(90deg,var(--brand-1),var(--brand-2),var(--brand-3));
+    opacity:.85;
+  }
+  .card:hover{
+    transform:translateY(-7px);
+    border-color:rgba(124,155,255,.42);
+    box-shadow:0 22px 46px rgba(4,8,26,.62), 0 0 0 1px rgba(124,155,255,.14) inset;
+  }
+  .card .ico{
+    width:50px;height:50px;border-radius:13px;display:grid;place-items:center;
+    font-size:1.45rem;margin-bottom:18px;
+    background:rgba(124,155,255,.12);border:1px solid rgba(124,155,255,.24);
+  }
+  .card h3{font-size:1.06rem;font-weight:800;letter-spacing:-.2px;margin-bottom:9px}
+  .card p{color:var(--muted);font-size:.925rem}
+
+  /* ---------- HOW IT WORKS ---------- */
+  .steps{position:relative;max-width:760px;margin-inline:auto;padding-left:56px}
+  .steps::before{
+    content:"";position:absolute;left:21px;top:14px;bottom:14px;width:3px;border-radius:3px;
+    background:linear-gradient(180deg,var(--brand-1),var(--brand-2) 55%,var(--brand-3));
+    box-shadow:0 0 22px rgba(124,155,255,.42);
+  }
+  .step{position:relative;padding:0 0 42px 0}
+  .step:last-child{padding-bottom:0}
+  .step .num{
+    position:absolute;left:-56px;top:-2px;
+    width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+    font-weight:900;font-size:1.02rem;color:#08102b;
+    background:linear-gradient(135deg,#9fb4ff,#c79cff);
+    box-shadow:0 0 0 6px rgba(10,14,34,.92), 0 8px 24px rgba(124,155,255,.42);
+  }
+  .step h3{font-size:1.15rem;font-weight:800;letter-spacing:-.3px;margin-bottom:7px}
+  .step p{color:var(--muted);font-size:.95rem;max-width:56ch}
+  .step code{
+    font-family:ui-monospace,Consolas,monospace;font-size:.85em;
+    background:rgba(124,155,255,.14);border:1px solid rgba(124,155,255,.26);
+    padding:2px 7px;border-radius:6px;color:#cfd8ff;
+  }
+
+  /* ---------- FAQ ---------- */
+  .faq{max-width:820px;margin-inline:auto;display:flex;flex-direction:column;gap:14px}
+  details{
+    border:1px solid var(--line);border-radius:14px;
+    background:linear-gradient(180deg, rgba(24,31,66,.6), rgba(14,19,44,.6));
+    transition:border-color .22s ease, background .22s ease;
+    overflow:hidden;
+  }
+  details[open]{border-color:rgba(124,155,255,.4);background:rgba(24,31,66,.85)}
+  summary{
+    list-style:none;cursor:pointer;display:flex;align-items:center;gap:16px;
+    padding:19px 24px;font-weight:700;font-size:1rem;letter-spacing:-.15px;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary .plus{
+    margin-left:auto;flex:0 0 auto;position:relative;
+    width:26px;height:26px;border-radius:8px;
+    background:rgba(124,155,255,.14);border:1px solid rgba(124,155,255,.3);
+    transition:transform .28s ease, background .28s ease;
+  }
+  summary .plus::before,
+  summary .plus::after{
+    content:"";position:absolute;left:50%;top:50%;background:#b9c7ff;border-radius:2px;
+    transform:translate(-50%,-50%);
+  }
+  summary .plus::before{width:12px;height:2px}
+  summary .plus::after{width:2px;height:12px;transition:opacity .2s ease}
+  details[open] summary .plus{transform:rotate(45deg);background:rgba(94,240,216,.18);border-color:rgba(94,240,216,.45)}
+  details[open] summary .plus::before,
+  details[open] summary .plus::after{background:#5ef0d8}
+  details .answer{padding:0 24px 22px;color:var(--muted);font-size:.94rem}
+  details .answer a{color:#9fb4ff;border-bottom:1px solid rgba(159,180,255,.4)}
+
+  /* ---------- CTA BANNER ---------- */
+  .cta-banner{
+    position:relative;overflow:hidden;text-align:center;
+    padding:66px 30px;border-radius:26px;
+    background:linear-gradient(150deg, rgba(28,36,80,.92), rgba(13,18,44,.96));
+    border:1px solid rgba(124,155,255,.28);
+    box-shadow:0 30px 70px rgba(3,6,20,.6);
+  }
+  .cta-banner::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(520px 320px at 50% 0%, rgba(124,155,255,.42), transparent 68%),
+               radial-gradient(420px 280px at 18% 110%, rgba(165,107,255,.28), transparent 70%),
+               radial-gradient(420px 280px at 82% 110%, rgba(56,232,200,.22), transparent 70%);
+  }
+  .cta-banner > *{position:relative}
+  .cta-banner h2{
+    font-size:clamp(1.7rem,4.4vw,2.7rem);font-weight:900;letter-spacing:-1.1px;line-height:1.14;
+    margin-bottom:16px;
+  }
+  .cta-banner p{color:var(--muted);max-width:54ch;margin:0 auto 32px;font-size:1.02rem}
+  .cta-banner .btn{padding:16px 36px;font-size:1.03rem}
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    border-top:1px solid var(--line);
+    padding:34px 0 46px;margin-top:20px;
+    background:rgba(7,10,24,.55);
+  }
+  .foot-inner{
+    display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+    font-size:.88rem;color:var(--muted);
+  }
+  .foot-inner a{color:#9fb4ff;font-weight:700}
+  .foot-inner a:hover{text-decoration:underline}
+  .foot-links{display:flex;gap:20px;flex-wrap:wrap}
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width:900px){
+    .grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:640px){
+    .nav-links{display:none}
+    .nav-inner{height:66px;justify-content:space-between}
+    .nav .btn{padding:9px 15px;font-size:.82rem}
+    .hero{padding:58px 0 44px}
+    h1{letter-spacing:-1px}
+    .hero-cta .btn{width:100%}
+    .grid{grid-template-columns:1fr}
+    section{padding:56px 0}
+    .steps{padding-left:48px}
+    .steps::before{left:17px}
+    .step .num{left:-48px;width:36px;height:36px;font-size:.88rem}
+    .chip{flex:1 1 44%;min-width:0}
+    .cta-banner{padding:48px 20px;border-radius:20px}
+    .cta-banner .btn{width:100%}
+    .foot-inner{flex-direction:column;text-align:center}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark">📷</span>
+      <span>Cameraman&nbsp;TD&nbsp;Script</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="btn btn-primary" href="https://gitscore.cc" target="_blank" rel="noopener">Download</a>
+  </div>
+</nav>
+
+<main id="top">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="wrap">
+      <span class="pill"><span class="dot"></span>Cameraman Tower Defense Script</span>
+      <h1>The <span class="grad-text">Cameraman TD Script</span> that plays the game for you</h1>
+      <p class="lede">
+        Auto-place cameras, clear waves instantly, stack infinite money and see hidden enemies with ESP.
+        One-click injector for Windows 10 and 11 — no setup headaches, free and open source.
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="https://gitscore.cc" target="_blank" rel="noopener">⬇ Download for Windows</a>
+        <a class="btn btn-ghost" href="https://github.com/cameraman-td-script" target="_blank" rel="noopener">★ View on GitHub</a>
+      </div>
+      <div class="stats">
+        <div class="chip"><b>38,400+</b><small>Downloads</small></div>
+        <div class="chip"><b>v3.2.1</b><small>Version</small></div>
+        <div class="chip"><b>Windows 10 / 11</b><small>Platform</small></div>
+        <div class="chip"><b>Free &amp; open source</b><small>License</small></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">Features</span>
+        <h2>Everything you need to dominate Cameraman Tower Defense</h2>
+        <p>Six core modules, all toggled from a single clean overlay. No lag spikes, no bloat, no forced updates.</p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <div class="ico">📷</div>
+          <h3>Auto-Place Cameras</h3>
+          <p>Automatically drops and upgrades cameras on the best tiles every round, so your defense builds itself while you watch.</p>
+        </article>
+        <article class="card">
+          <div class="ico">⚡</div>
+          <h3>Instant Wave Clear</h3>
+          <p>Skip the grind and clear any wave on demand. Perfect for testing loadouts, farming rewards or pushing deep runs fast.</p>
+        </article>
+        <article class="card">
+          <div class="ico">💰</div>
+          <h3>Infinite Money</h3>
+          <p>Unlock unlimited cash and max out every camera upgrade instantly. Build the exact setup you want without waiting.</p>
+        </article>
+        <article class="card">
+          <div class="ico">👁️</div>
+          <h3>ESP on Hidden Enemies</h3>
+          <p>See cloaked and hidden units through walls with outlines, distance markers and health bars rendered by the ESP module.</p>
+        </article>
+        <article class="card">
+          <div class="ico">🚀</div>
+          <h3>One-Click Injector</h3>
+          <p>A single portable executable attaches the script to the game. No DLL hunting, no manual patching, no dependencies.</p>
+        </article>
+        <article class="card">
+          <div class="ico">🛡️</div>
+          <h3>Safe &amp; Open Source</h3>
+          <p>Every line is public on GitHub. Review the code yourself, build from source, or use the verified signed release.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">How it works</span>
+        <h2>From download to in-game in under a minute</h2>
+        <p>Three steps. No accounts, no key systems, no installer bloatware.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>Download the injector</h3>
+          <p>Grab the latest build from the download page. It ships as a single portable <code>.exe</code> — nothing to install and nothing left behind.</p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>Launch the game and inject</h3>
+          <p>Open Cameraman Tower Defense, then run the injector and hit <code>Inject</code>. The overlay attaches automatically and loads the script menu.</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>Toggle your modules</h3>
+          <p>Enable auto-place cameras, instant wave clear, infinite money and ESP from the overlay. Settings save between sessions.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">FAQ</span>
+        <h2>Questions about the Cameraman TD script</h2>
+        <p>Short answers to the things people ask most before downloading.</p>
+      </div>
+      <div class="faq">
+        <details open>
+          <summary>Is the Cameraman Tower Defense script free?<span class="plus"></span></summary>
+          <div class="answer">
+            Yes. The script is completely free and open source. Every module — auto-place cameras, instant wave clear, infinite money and ESP — is included with no paywall, no premium tier and no key system. The full source lives on GitHub.
+          </div>
+        </details>
+        <details>
+          <summary>Which Windows versions are supported?<span class="plus"></span></summary>
+          <div class="answer">
+            The injector is built and tested for Windows 10 and Windows 11, 64-bit. It runs as a portable executable, so there is no installer and no admin prompt unless your antivirus asks for one on first launch.
+          </div>
+        </details>
+        <details>
+          <summary>How do I update to a newer version?<span class="plus"></span></summary>
+          <div class="answer">
+            Just download the latest build again and replace the old executable — your saved settings carry over. The overlay also shows a version tag (currently v3.2.1) so you can tell at a glance whether you're current.
+          </div>
+        </details>
+        <details>
+          <summary>Will the ESP and infinite money features get patched?<span class="plus"></span></summary>
+          <div class="answer">
+            Game updates can break any script, and we fix things as soon as they do. If a module stops working after a patch, check the GitHub releases page for an updated build — fixes are usually pushed within a few days.
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BANNER -->
+  <section>
+    <div class="wrap">
+      <div class="cta-banner">
+        <h2>Ready to auto-place, auto-clear and auto-win?</h2>
+        <p>Download the Cameraman Tower Defense script, inject in one click, and let the cameras do the work. Free, open source, Windows 10 and 11.</p>
+        <a class="btn btn-primary" href="https://gitscore.cc" target="_blank" rel="noopener">⬇ Download Cameraman TD Script</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div>
